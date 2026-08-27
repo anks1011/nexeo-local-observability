@@ -1,0 +1,18 @@
+#!/bin/bash
+# Wrapper to run Nexeo dev and pipe logs to observability UDP collector
+
+UDP_PORT=${NEXEO_OBSERVE_PORT:-3014}
+
+echo "Starting pnpm dev and piping logs to UDP $UDP_PORT..."
+
+pnpm dev 2>&1 | node -e "
+  const dgram = require('dgram');
+  const client = dgram.createSocket('udp4');
+  process.stdin.on('data', (data) => {
+    client.send(data, $UDP_PORT, '127.0.0.1');
+    process.stdout.write(data);
+  });
+  process.stdin.on('end', () => {
+    client.close();
+  });
+"

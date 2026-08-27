@@ -1,0 +1,17 @@
+{
+  "name": "@nexeo-local-observability/log-parser",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@nexeo-local-observability/log-types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "uuid": "^9.0.1",
+    "@types/uuid": "^9.0.8"
+  }
+}
