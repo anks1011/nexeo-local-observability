@@ -98,7 +98,7 @@ program
     .command('dev', { isDefault: true })
     .description('Start the Nexeo dev server and attach the observability dashboard')
     .option('--repo <path>', 'Path to the Nexeo repository (default: current directory)', process.cwd())
-    .option('--port <number>', 'Port for the dashboard', '3013')
+    .option('--port <number>', 'Port for the dashboard', '3854')
     .option('--max-events <number>', 'Maximum events to keep in memory', '10000')
     .option('--slow-query <number>', 'Threshold for slow queries in ms', '200')
     .option('--slow-request <number>', 'Threshold for slow requests in ms', '500')
@@ -115,7 +115,7 @@ program
 program
     .command('observe')
     .description('Start the observability dashboard in standalone mode, listening for UDP logs')
-    .option('--port <number>', 'Port for the dashboard', '3013')
+    .option('--port <number>', 'Port for the dashboard', '3854')
     .option('--udp-port <number>', 'UDP port to listen for piped logs', '3014')
     .option('--max-events <number>', 'Maximum events to keep in memory', '10000')
     .option('--slow-query <number>', 'Threshold for slow queries in ms', '200')

@@ -18,9 +18,9 @@ export function useLogs() {
     if (typeof window === 'undefined') return;
     
     // Auto-detect host and port based on current window location
-    // Default to 3013 if we're running Vite dev server on a different port
+    // Default to 3854 if we're running Vite dev server on a different port
     const isDev = window.location.port === '5173';
-    const port = isDev ? '3013' : window.location.port;
+    const port = isDev ? '3854' : window.location.port;
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${window.location.hostname}${port ? `:${port}` : ''}`;
     
@@ -71,7 +71,7 @@ export function useLogs() {
   const clear = async () => {
     try {
       const isDev = window.location.port === '5173';
-      const port = isDev ? '3013' : window.location.port;
+      const port = isDev ? '3854' : window.location.port;
       const httpProtocol = window.location.protocol;
       await fetch(`${httpProtocol}//${window.location.hostname}${port ? `:${port}` : ''}/api/clear`, { method: 'POST' });
     } catch (e) {

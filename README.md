@@ -54,12 +54,12 @@ To enable the local domain `https://nexeo-observability.local`, you must complet
    sudo setcap cap_net_bind_service=+ep $(which caddy)
    ```
 
-*(Note: If you skip these steps, the dashboard is always accessible via the internal dashboard port at `http://localhost:3013`)*
+*(Note: If you skip these steps, the dashboard is always accessible via the internal dashboard port at `http://localhost:3854`)*
 
 ## Configuration
 You can pass CLI arguments to customize behavior:
 - `--repo <path>`: Path to the Nexeo repo (default: current directory)
-- `--port <number>`: Dashboard port (default: 3013)
+- `--port <number>`: Dashboard port (default: 3854)
 - `--max-events <number>`: Buffer limit (default: 10000)
 - `--slow-query <number>`: Slow DB query threshold in ms (default: 200)
 - `--slow-request <number>`: Slow request threshold in ms (default: 500)
