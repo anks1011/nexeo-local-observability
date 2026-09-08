@@ -39,22 +39,8 @@ pnpm start --repo /path/to/Nexeo_Repository
 
 The CLI will start the Nexeo `pnpm dev` process, stream logs to your terminal as usual, and launch the dashboard locally.
 
-Then open your browser to your local domain:
-**https://nexeo-observability.local**
-
-### Local Domain Setup
-To enable the local domain `https://nexeo-observability.local`, you must complete a one-time setup:
-
-1. **Hosts entry:** Add the following line to your `/etc/hosts` file:
-   ```bash
-   sudo sh -c 'echo "127.0.0.1 nexeo-observability.local" >> /etc/hosts'
-   ```
-2. **Reverse Proxy:** The CLI automatically spins up a lightweight Caddy reverse proxy on port 80. To allow Caddy to bind to port 80 without `sudo`, grant it the appropriate network permissions:
-   ```bash
-   sudo setcap cap_net_bind_service=+ep $(which caddy)
-   ```
-
-*(Note: If you skip these steps, the dashboard is always accessible via the internal dashboard port at `http://localhost:3854`)*
+Then open your browser to the dashboard:
+**http://localhost:3854**
 
 ## Configuration
 You can pass CLI arguments to customize behavior:
