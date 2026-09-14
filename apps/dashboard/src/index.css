@@ -363,6 +363,76 @@ body {
   margin-top: 0.25rem;
 }
 
+.http-request-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.http-method-badge {
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+}
+.http-method-badge.method-get {
+  background-color: rgba(62, 175, 124, 0.15);
+  color: var(--color-success);
+  border: 1px solid rgba(62, 175, 124, 0.3);
+}
+.http-method-badge.method-post {
+  background-color: rgba(94, 106, 210, 0.15);
+  color: var(--color-info);
+  border: 1px solid rgba(94, 106, 210, 0.3);
+}
+.http-method-badge.method-put,
+.http-method-badge.method-patch {
+  background-color: rgba(242, 166, 90, 0.15);
+  color: var(--color-warn);
+  border: 1px solid rgba(242, 166, 90, 0.3);
+}
+.http-method-badge.method-delete {
+  background-color: rgba(229, 110, 110, 0.15);
+  color: var(--color-error);
+  border: 1px solid rgba(229, 110, 110, 0.3);
+}
+
+.http-status-badge {
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+}
+.http-status-badge.status-2xx {
+  background-color: rgba(62, 175, 124, 0.15);
+  color: var(--color-success);
+}
+.http-status-badge.status-3xx {
+  background-color: rgba(94, 106, 210, 0.15);
+  color: var(--color-info);
+}
+.http-status-badge.status-4xx {
+  background-color: rgba(242, 166, 90, 0.15);
+  color: var(--color-warn);
+}
+.http-status-badge.status-5xx {
+  background-color: rgba(229, 110, 110, 0.15);
+  color: var(--color-error);
+}
+
+.http-url-text {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
 .log-detail {
   background-color: var(--bg-surface-hover);
   padding: 1rem;

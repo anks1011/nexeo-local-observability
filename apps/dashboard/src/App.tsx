@@ -5,10 +5,23 @@ import { Dropdown } from './components/Dropdown';
 import { DuplicateQueriesTable } from './components/DuplicateQueriesTable';
 import { useDuplicateQueries } from './hooks/useDuplicateQueries';
 import { interpolatePostgresQuery } from '@nexeo-local-observability/log-parser/src/query-interpolator';
-import { Activity, Database, AlertTriangle, List, Pause, Play, Trash2, ShieldAlert, Palette, Copy } from 'lucide-react';
+import type { LogEvent } from '@nexeo-local-observability/log-types';
+import { Activity, Database, AlertTriangle, List, Pause, Play, Trash2, ShieldAlert, Palette, Copy, Globe } from 'lucide-react';
 import './index.css';
 
-type ViewMode = 'all' | 'errors' | 'warnings' | 'slow_queries' | 'slow_requests' | 'queries' | 'duplicate_queries';
+type ViewMode = 'all' | 'errors' | 'warnings' | 'requests' | 'slow_requests' | 'queries' | 'slow_queries' | 'duplicate_queries';
+
+export const isRequestLog = (e: LogEvent): boolean => {
+  if (e.logType === 'db' || e.query || e.databaseType) return false;
+  return Boolean(
+    e.method ||
+    e.url ||
+    e.statusCode !== undefined ||
+    e.durationMs !== undefined ||
+    e.logType === 'request' ||
+    e.logType === 'http'
+  );
+};
 
 function App() {
   const { events, isConnected, isLive, setIsLive, clear } = useLogs();
@@ -35,8 +48,9 @@ function App() {
     // View Mode Filter
     if (viewMode === 'errors') filtered = filtered.filter(e => e.level === 'error');
     if (viewMode === 'warnings') filtered = filtered.filter(e => e.level === 'warn');
+    if (viewMode === 'requests') filtered = filtered.filter(e => isRequestLog(e));
+    if (viewMode === 'slow_requests') filtered = filtered.filter(e => isRequestLog(e) && e.slow);
     if (viewMode === 'slow_queries') filtered = filtered.filter(e => (e.logType === 'db' || e.query) && e.slow);
-    if (viewMode === 'slow_requests') filtered = filtered.filter(e => e.durationMs !== undefined && e.slow);
     if (viewMode === 'queries') filtered = filtered.filter(e => (e.logType === 'db' || e.query));
 
     // Service Filter
@@ -56,6 +70,9 @@ function App() {
           e.service.toLowerCase().includes(q) ||
           (e.requestId && e.requestId.toLowerCase().includes(q)) ||
           (e.correlationId && e.correlationId.toLowerCase().includes(q)) ||
+          (e.method && e.method.toLowerCase().includes(q)) ||
+          (e.url && e.url.toLowerCase().includes(q)) ||
+          (e.statusCode !== undefined && String(e.statusCode).includes(q)) ||
           (e.query && e.query.toLowerCase().includes(q)) ||
           (e.database && e.database.toLowerCase().includes(q)) ||
           (e.schema && e.schema.toLowerCase().includes(q)) ||
@@ -68,12 +85,38 @@ function App() {
   }, [events, viewMode, search, serviceFilter]);
 
   const stats = useMemo(() => {
+    const requestEvents = events.filter(isRequestLog);
     return {
       errors: events.filter(e => e.level === 'error').length,
       warnings: events.filter(e => e.level === 'warn').length,
-      slowQueries: events.filter(e => (e.logType === 'db' || e.query) && e.slow).length,
-      slowRequests: events.filter(e => e.durationMs !== undefined && e.slow).length,
+      requests: requestEvents.length,
+      slowRequests: requestEvents.filter(e => e.slow).length,
       queries: events.filter(e => (e.logType === 'db' || e.query)).length,
+      slowQueries: events.filter(e => (e.logType === 'db' || e.query) && e.slow).length,
+    };
+  }, [events]);
+
+  const requestStats = useMemo(() => {
+    const reqs = events.filter(isRequestLog);
+    const withDuration = reqs.filter(e => typeof e.durationMs === 'number');
+    const totalDuration = withDuration.reduce((acc, e) => acc + (e.durationMs || 0), 0);
+    const avgDuration = withDuration.length > 0 ? Math.round(totalDuration / withDuration.length) : 0;
+    const maxDuration = withDuration.reduce((max, e) => Math.max(max, e.durationMs || 0), 0);
+    
+    const slowReqs = reqs.filter(e => e.slow);
+    const slowWithDuration = slowReqs.filter(e => typeof e.durationMs === 'number');
+    const slowTotal = slowWithDuration.reduce((acc, e) => acc + (e.durationMs || 0), 0);
+    const avgSlowDuration = slowWithDuration.length > 0 ? Math.round(slowTotal / slowWithDuration.length) : 0;
+
+    const errorCount = reqs.filter(e => (e.statusCode !== undefined && e.statusCode >= 400) || e.level === 'error').length;
+
+    return {
+      total: reqs.length,
+      avgDuration,
+      maxDuration,
+      slow: slowReqs.length,
+      avgSlowDuration,
+      errors: errorCount,
     };
   }, [events]);
 
@@ -114,11 +157,19 @@ function App() {
           </button>
 
           <button 
+            className={`nav-item ${viewMode === 'requests' ? 'active' : ''}`}
+            onClick={() => setViewMode('requests')}
+          >
+            <Globe size={18} color="var(--color-info)" /> Request Logs
+            {stats.requests > 0 && <span style={{ marginLeft: 'auto', fontSize: '0.8rem', opacity: 0.7 }}>{stats.requests}</span>}
+          </button>
+
+          <button 
             className={`nav-item ${viewMode === 'slow_requests' ? 'active' : ''}`}
             onClick={() => setViewMode('slow_requests')}
           >
-            <Activity size={18} color="var(--color-info)" /> Slow Requests
-            {stats.slowRequests > 0 && <span style={{ marginLeft: 'auto', fontSize: '0.8rem' }}>{stats.slowRequests}</span>}
+            <Activity size={18} color="var(--color-warn)" /> Slow Requests
+            {stats.slowRequests > 0 && <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--color-warn)' }}>{stats.slowRequests}</span>}
           </button>
           
           <button 
@@ -164,9 +215,11 @@ function App() {
             {viewMode === 'all' && 'All Logs'}
             {viewMode === 'errors' && 'Errors'}
             {viewMode === 'warnings' && 'Warnings'}
+            {viewMode === 'requests' && 'Request Logs'}
             {viewMode === 'slow_requests' && 'Slow Requests'}
-            {viewMode === 'slow_queries' && 'Slow DB Queries'}
             {viewMode === 'queries' && 'All Queries'}
+            {viewMode === 'slow_queries' && 'Slow DB Queries'}
+            {viewMode === 'duplicate_queries' && 'Duplicate Queries'}
           </div>
           
           <div className="toolbar">
@@ -229,6 +282,48 @@ function App() {
             </button>
           </div>
         </div>
+
+        {viewMode === 'requests' && (
+          <div className="stat-grid" style={{ marginBottom: '1rem', paddingBottom: 0 }}>
+            <div className="stat-card">
+              <div className="stat-title">Total Requests</div>
+              <div className="stat-value">{requestStats.total}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-title">Avg Response Time</div>
+              <div className="stat-value">{requestStats.avgDuration}ms</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-title">Slow Requests (&ge;500ms)</div>
+              <div className="stat-value" style={{ color: requestStats.slow > 0 ? 'var(--color-warn)' : 'inherit' }}>
+                {requestStats.slow}
+              </div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-title">Error Responses (4xx/5xx)</div>
+              <div className="stat-value" style={{ color: requestStats.errors > 0 ? 'var(--color-error)' : 'inherit' }}>
+                {requestStats.errors}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {viewMode === 'slow_requests' && (
+          <div className="stat-grid" style={{ marginBottom: '1rem', paddingBottom: 0 }}>
+            <div className="stat-card">
+              <div className="stat-title">Slow Requests (&ge;500ms)</div>
+              <div className="stat-value" style={{ color: 'var(--color-warn)' }}>{stats.slowRequests}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-title">Avg Slow Duration</div>
+              <div className="stat-value">{requestStats.avgSlowDuration}ms</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-title">Max Response Time</div>
+              <div className="stat-value">{requestStats.maxDuration}ms</div>
+            </div>
+          </div>
+        )}
 
         {viewMode === 'slow_queries' && (
           <div className="stat-grid">

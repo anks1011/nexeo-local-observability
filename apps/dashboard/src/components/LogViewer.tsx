@@ -17,87 +17,151 @@ export const LogViewer: React.FC<LogViewerProps> = ({ logs }) => {
 
   return (
     <div className="log-container">
-      {logs.map((log) => {
-        const isExpanded = expandedId === log.id;
-        
-        return (
-          <div 
-            key={log.id} 
-            className="log-entry"
-            onClick={() => setExpandedId(isExpanded ? null : log.id)}
-          >
-            <div className="log-meta">
-              <span style={{ color: 'var(--text-muted)' }}>{formatTime(log.timestamp)}</span>
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{log.service}</span>
-              <span className={`badge ${log.level}`}>{log.level}</span>
-              
-              {log.durationMs !== undefined && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: log.slow ? 'var(--color-error)' : 'inherit' }}>
-                  <Activity size={14} /> {log.durationMs}ms {log.slow && '🔴'}
-                </span>
-              )}
-
-              {log.queryDurationMs !== undefined && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: log.slow ? 'var(--color-error)' : 'inherit' }}>
-                  <Database size={14} /> {log.queryDurationMs}ms {log.slow && '🔴'}
-                </span>
-              )}
-
-              {log.requestId && (
-                <span style={{ color: 'var(--accent-primary)' }}>req: {log.requestId.slice(0, 8)}...</span>
-              )}
-            </div>
-            
-            <div className="log-message">
-              {log.method && log.url ? (
-                <span><strong>{log.method}</strong> {log.url} &rarr; {log.statusCode}</span>
-              ) : log.query ? (
-                <span style={{ color: 'var(--color-info)' }}>{log.query}</span>
-              ) : (
-                log.message
-              )}
-            </div>
-
-            {isExpanded && (
-              <div className="log-detail" onClick={(e) => e.stopPropagation()}>
-                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>ID:</span>
-                  <span>{log.id}</span>
-                  
-                  {log.requestId && (
-                    <>
-                      <span style={{ color: 'var(--text-muted)' }}>Request ID:</span>
-                      <span>{log.requestId}</span>
-                    </>
-                  )}
-                  
-                  {log.correlationId && (
-                    <>
-                      <span style={{ color: 'var(--text-muted)' }}>Correlation ID:</span>
-                      <span>{log.correlationId}</span>
-                    </>
-                  )}
-                  
-                  {log.tenantId && (
-                    <>
-                      <span style={{ color: 'var(--text-muted)' }}>Tenant ID:</span>
-                      <span>{log.tenantId}</span>
-                    </>
-                  )}
-
-                  {log.database && (
-                    <>
-                      <span style={{ color: 'var(--text-muted)' }}>Database:</span>
-                      <span>{log.database}</span>
-                    </>
-                  )}
-                </div>
+      {logs.length === 0 ? (
+        <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+          No logs found matching current view or filters.
+        </div>
+      ) : (
+        logs.map((log) => {
+          const isExpanded = expandedId === log.id;
+          
+          return (
+            <div 
+              key={log.id} 
+              className="log-entry"
+              onClick={() => setExpandedId(isExpanded ? null : log.id)}
+            >
+              <div className="log-meta">
+                <span style={{ color: 'var(--text-muted)' }}>{formatTime(log.timestamp)}</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{log.service}</span>
+                <span className={`badge ${log.level}`}>{log.level}</span>
                 
-                {(log.query || log.elasticRequest) ? (
-                  <div className="mt-4">
-                    <QueryInspector event={log} />
+                {log.durationMs !== undefined && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: log.slow ? 'var(--color-error)' : 'inherit' }}>
+                    <Activity size={14} /> {log.durationMs}ms {log.slow && '🔴'}
+                  </span>
+                )}
+
+                {log.queryDurationMs !== undefined && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: log.slow ? 'var(--color-error)' : 'inherit' }}>
+                    <Database size={14} /> {log.queryDurationMs}ms {log.slow && '🔴'}
+                  </span>
+                )}
+
+                {log.requestId && (
+                  <span style={{ color: 'var(--accent-primary)' }}>req: {log.requestId.slice(0, 8)}...</span>
+                )}
+              </div>
+              
+              <div className="log-message">
+                {log.method || log.url ? (
+                  <div className="http-request-line">
+                    {log.method && (
+                      <span className={`http-method-badge method-${log.method.toLowerCase()}`}>
+                        {log.method}
+                      </span>
+                    )}
+                    {log.url && (
+                      <span className="http-url-text">
+                        {log.url}
+                      </span>
+                    )}
+                    {log.statusCode !== undefined && (
+                      <span className={`http-status-badge status-${Math.floor(log.statusCode / 100)}xx`}>
+                        {log.statusCode}
+                      </span>
+                    )}
+                    {log.message && log.message !== log.url && log.message !== `${log.method} ${log.url}` && (
+                      <span style={{ color: 'var(--text-secondary)', marginLeft: '4px' }}>
+                        {log.message}
+                      </span>
+                    )}
                   </div>
+                ) : log.query ? (
+                  <span style={{ color: 'var(--color-info)' }}>{log.query}</span>
                 ) : (
+                  log.message
+                )}
+              </div>
+
+              {isExpanded && (
+                <div className="log-detail" onClick={(e) => e.stopPropagation()}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>ID:</span>
+                    <span>{log.id}</span>
+                    
+                    {log.method && (
+                      <>
+                        <span style={{ color: 'var(--text-muted)' }}>Method:</span>
+                        <span>
+                          <span className={`http-method-badge method-${log.method.toLowerCase()}`}>
+                            {log.method}
+                          </span>
+                        </span>
+                      </>
+                    )}
+
+                    {log.url && (
+                      <>
+                        <span style={{ color: 'var(--text-muted)' }}>URL / Path:</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>{log.url}</span>
+                      </>
+                    )}
+
+                    {log.statusCode !== undefined && (
+                      <>
+                        <span style={{ color: 'var(--text-muted)' }}>Status Code:</span>
+                        <span>
+                          <span className={`http-status-badge status-${Math.floor(log.statusCode / 100)}xx`}>
+                            {log.statusCode}
+                          </span>
+                        </span>
+                      </>
+                    )}
+
+                    {log.durationMs !== undefined && (
+                      <>
+                        <span style={{ color: 'var(--text-muted)' }}>Response Time:</span>
+                        <span style={{ color: log.slow ? 'var(--color-error)' : 'inherit', fontWeight: 600 }}>
+                          {log.durationMs}ms {log.slow && '🔴 (Slow Request)'}
+                        </span>
+                      </>
+                    )}
+
+                    {log.requestId && (
+                      <>
+                        <span style={{ color: 'var(--text-muted)' }}>Request ID:</span>
+                        <span>{log.requestId}</span>
+                      </>
+                    )}
+                    
+                    {log.correlationId && (
+                      <>
+                        <span style={{ color: 'var(--text-muted)' }}>Correlation ID:</span>
+                        <span>{log.correlationId}</span>
+                      </>
+                    )}
+                    
+                    {log.tenantId && (
+                      <>
+                        <span style={{ color: 'var(--text-muted)' }}>Tenant ID:</span>
+                        <span>{log.tenantId}</span>
+                      </>
+                    )}
+
+                    {log.database && (
+                      <>
+                        <span style={{ color: 'var(--text-muted)' }}>Database:</span>
+                        <span>{log.database}</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  {(log.query || log.elasticRequest) ? (
+                    <div className="mt-4">
+                      <QueryInspector event={log} />
+                    </div>
+                  ) : (
                   log.format === 'json' && log.metadata && (
                     <div className="mt-4">
                       {log.error && typeof log.error === 'object' && (
@@ -135,7 +199,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({ logs }) => {
             )}
           </div>
         );
-      })}
+      }))}
     </div>
   );
 };
